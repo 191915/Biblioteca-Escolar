@@ -1,5 +1,4 @@
-﻿// Lista que guarda todos los libros de la biblioteca.
-List<Titulo> catalogo = new List<Titulo>();
+﻿List<Titulo> catalogo = new List<Titulo>();
 
 // Datos: ISBN, nombre, ejemplares, préstamos históricos.
 catalogo.Add(new Titulo("978-0001", "Don Quijote", 5, 40));
@@ -11,22 +10,36 @@ catalogo.Add(new Titulo("978-0006", "Rayuela", 3, 12));
 catalogo.Add(new Titulo("978-0007", "Fahrenheit 451", 2, 8));
 catalogo.Add(new Titulo("978-0008", "El diario de Ana Frank", 1, 3));
 
-// ===== PRUEBA DE ESCRITORIO =====
-Console.WriteLine("=== CATÁLOGO ANTES DE LOS PRÉSTAMOS ===");
+// Desordenamos a propósito para comprobar que el ordenamiento funciona.
+Titulo temp = catalogo[0];
+catalogo[0] = catalogo[7];
+catalogo[7] = temp;
+temp = catalogo[2];
+catalogo[2] = catalogo[5];
+catalogo[5] = temp;
+
+Console.WriteLine("=== CATÁLOGO DESORDENADO ===");
 MostrarCatalogo(catalogo);
 
+OrdenarPorInsercion(catalogo);
+
+Console.WriteLine();
+Console.WriteLine("=== CATÁLOGO ORDENADO (más préstamos primero) ===");
+MostrarCatalogo(catalogo);
+
+// ===== PRÉSTAMOS (del Día 3) =====
 Console.WriteLine();
 Console.WriteLine("=== REGISTRANDO 3 PRÉSTAMOS ===");
 RegistrarPrestamo(catalogo, "Don Quijote");
 RegistrarPrestamo(catalogo, "Rayuela");
 RegistrarPrestamo(catalogo, "La odisea");
+RegistrarPrestamo(catalogo, "La odisea");   // ya no hay copias
+
+// Después de prestar, los préstamos cambiaron: hay que volver a ordenar.
+OrdenarPorInsercion(catalogo);
 
 Console.WriteLine();
-Console.WriteLine("=== PRUEBA EXTRA: La odisea ya no tiene copias ===");
-RegistrarPrestamo(catalogo, "La odisea");
-
-Console.WriteLine();
-Console.WriteLine("=== CATÁLOGO DESPUÉS DE LOS PRÉSTAMOS ===");
+Console.WriteLine("=== CATÁLOGO ORDENADO DESPUÉS DE LOS PRÉSTAMOS ===");
 MostrarCatalogo(catalogo);
 
 Console.WriteLine();
@@ -37,7 +50,6 @@ ConsultarDisponibilidad(catalogo, "Libro inexistente");
 
 // ===== FUNCIONES =====
 
-// Muestra todos los libros en pantalla.
 void MostrarCatalogo(List<Titulo> lista)
 {
     foreach (Titulo t in lista)
@@ -47,7 +59,35 @@ void MostrarCatalogo(List<Titulo> lista)
     }
 }
 
-// Busca un libro por su nombre (búsqueda secuencial: revisa uno por uno).
+// Devuelve true si "a" debe ir ANTES que "b".
+// Va primero el que tiene más préstamos. Si empatan, va primero el alfabético.
+bool VaAntes(Titulo a, Titulo b)
+{
+    if (a.Prestamos != b.Prestamos)
+    {
+        return a.Prestamos > b.Prestamos;
+    }
+    return string.Compare(a.Nombre, b.Nombre, StringComparison.CurrentCulture) < 0;
+}
+
+// Ordenamiento por inserción, hecho a mano (sin Sort).
+void OrdenarPorInsercion(List<Titulo> lista)
+{
+    for (int i = 1; i < lista.Count; i++)
+    {
+        Titulo actual = lista[i];
+        int j = i - 1;
+
+        while (j >= 0 && VaAntes(actual, lista[j]))
+        {
+            lista[j + 1] = lista[j];
+            j--;
+        }
+        lista[j + 1] = actual;
+    }
+}
+
+// Búsqueda secuencial por nombre (revisa uno por uno).
 Titulo? BuscarPorNombre(List<Titulo> lista, string nombre)
 {
     for (int i = 0; i < lista.Count; i++)
@@ -57,10 +97,9 @@ Titulo? BuscarPorNombre(List<Titulo> lista, string nombre)
             return lista[i];
         }
     }
-    return null; // no se encontró
+    return null;
 }
 
-// Dice cuántas copias quedan de un libro.
 void ConsultarDisponibilidad(List<Titulo> lista, string nombre)
 {
     Titulo? libro = BuscarPorNombre(lista, nombre);
@@ -75,7 +114,6 @@ void ConsultarDisponibilidad(List<Titulo> lista, string nombre)
     }
 }
 
-// Registra un préstamo: baja las disponibles y sube el contador histórico.
 void RegistrarPrestamo(List<Titulo> lista, string nombre)
 {
     Titulo? libro = BuscarPorNombre(lista, nombre);
@@ -89,13 +127,12 @@ void RegistrarPrestamo(List<Titulo> lista, string nombre)
     }
     else
     {
-        libro.Disponibles--;   // queda una copia menos
-        libro.Prestamos++;     // se suma un préstamo al historial
+        libro.Disponibles--;
+        libro.Prestamos++;
         Console.WriteLine("Préstamo registrado: " + nombre);
     }
 }
 
-// Esta es la "ficha" de un libro.
 class Titulo
 {
     public string Isbn;
