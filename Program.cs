@@ -10,62 +10,86 @@ catalogo.Add(new Titulo("978-0006", "Rayuela", 3, 12));
 catalogo.Add(new Titulo("978-0007", "Fahrenheit 451", 2, 8));
 catalogo.Add(new Titulo("978-0008", "El diario de Ana Frank", 1, 3));
 
-// Desordenamos a propósito para comprobar que el ordenamiento funciona.
-Titulo temp = catalogo[0];
-catalogo[0] = catalogo[7];
-catalogo[7] = temp;
-temp = catalogo[2];
-catalogo[2] = catalogo[5];
-catalogo[5] = temp;
-
-Console.WriteLine("=== CATÁLOGO DESORDENADO ===");
-MostrarCatalogo(catalogo);
-
+// El catálogo se mantiene ordenado por préstamos.
 OrdenarPorInsercion(catalogo);
 
-Console.WriteLine();
-Console.WriteLine("=== CATÁLOGO ORDENADO (más préstamos primero) ===");
-MostrarCatalogo(catalogo);
-
-// ===== PRÉSTAMOS (Día 3) =====
-Console.WriteLine();
-Console.WriteLine("=== REGISTRANDO 3 PRÉSTAMOS ===");
-RegistrarPrestamo(catalogo, "Don Quijote");
-RegistrarPrestamo(catalogo, "Rayuela");
-RegistrarPrestamo(catalogo, "La odisea");
-RegistrarPrestamo(catalogo, "La odisea");   // ya no hay copias
-
-OrdenarPorInsercion(catalogo);
-
-Console.WriteLine();
-Console.WriteLine("=== CATÁLOGO ORDENADO DESPUÉS DE LOS PRÉSTAMOS ===");
-MostrarCatalogo(catalogo);
-
-Console.WriteLine();
-Console.WriteLine("=== CONSULTA DE DISPONIBILIDAD (búsqueda secuencial por título) ===");
-ConsultarDisponibilidad(catalogo, "Don Quijote");
-ConsultarDisponibilidad(catalogo, "Libro inexistente");
-
-// ===== BÚSQUEDA BINARIA POR ISBN (Día 5) =====
-// Hacemos una COPIA de la lista y la ordenamos por ISBN.
-// El catálogo original sigue ordenado por préstamos.
+// Copia ordenada por ISBN para la búsqueda binaria.
+// Contiene los mismos libros, así que los préstamos se reflejan en ambas listas.
 List<Titulo> porIsbn = new List<Titulo>(catalogo);
 OrdenarPorIsbn(porIsbn);
 
-Console.WriteLine();
-Console.WriteLine("=== COPIA ORDENADA POR ISBN ===");
-MostrarCatalogo(porIsbn);
+bool salir = false;
+while (!salir)
+{
+    Console.WriteLine();
+    Console.WriteLine("===== BIBLIOTECA ESCOLAR =====");
+    Console.WriteLine("1. Ver catálogo (más prestados primero)");
+    Console.WriteLine("2. Consultar disponibilidad por título");
+    Console.WriteLine("3. Buscar por ISBN");
+    Console.WriteLine("4. Registrar un préstamo");
+    Console.WriteLine("5. Prueba de escritorio (3 préstamos)");
+    Console.WriteLine("0. Salir");
+    Console.Write("Elige una opción: ");
+    string opcion = Console.ReadLine() ?? "";
 
-Console.WriteLine();
-Console.WriteLine("=== BÚSQUEDA BINARIA POR ISBN ===");
-BuscarPorIsbn(porIsbn, "978-0003");
-BuscarPorIsbn(porIsbn, "978-0008");
-BuscarPorIsbn(porIsbn, "978-0001");
-BuscarPorIsbn(porIsbn, "978-0005");
-BuscarPorIsbn(porIsbn, "978-9999");   // no existe
+    if (opcion == "1")
+    {
+        MostrarCatalogo(catalogo);
+    }
+    else if (opcion == "2")
+    {
+        Console.Write("Título del libro: ");
+        string nombre = Console.ReadLine() ?? "";
+        ConsultarDisponibilidad(catalogo, nombre);
+    }
+    else if (opcion == "3")
+    {
+        Console.Write("ISBN (ejemplo 978-0003): ");
+        string isbn = Console.ReadLine() ?? "";
+        BuscarPorIsbn(porIsbn, isbn);
+    }
+    else if (opcion == "4")
+    {
+        Console.Write("Título del libro a prestar: ");
+        string nombre = Console.ReadLine() ?? "";
+        RegistrarPrestamo(catalogo, nombre);
+        OrdenarPorInsercion(catalogo);   // los préstamos cambian el orden
+    }
+    else if (opcion == "5")
+    {
+        PruebaDeEscritorio();
+    }
+    else if (opcion == "0")
+    {
+        salir = true;
+        Console.WriteLine("Hasta luego.");
+    }
+    else
+    {
+        Console.WriteLine("Opción no válida.");
+    }
+}
 
 
 // ===== FUNCIONES =====
+
+void PruebaDeEscritorio()
+{
+    Console.WriteLine();
+    Console.WriteLine("=== CATÁLOGO ANTES DE LOS PRÉSTAMOS ===");
+    MostrarCatalogo(catalogo);
+
+    Console.WriteLine();
+    Console.WriteLine("=== REGISTRANDO 3 PRÉSTAMOS ===");
+    RegistrarPrestamo(catalogo, "Don Quijote");
+    RegistrarPrestamo(catalogo, "Rayuela");
+    RegistrarPrestamo(catalogo, "La odisea");
+    OrdenarPorInsercion(catalogo);
+
+    Console.WriteLine();
+    Console.WriteLine("=== CATÁLOGO DESPUÉS DE LOS PRÉSTAMOS ===");
+    MostrarCatalogo(catalogo);
+}
 
 void MostrarCatalogo(List<Titulo> lista)
 {
@@ -123,7 +147,6 @@ void OrdenarPorIsbn(List<Titulo> lista)
 
 // Búsqueda binaria hecha a mano. La lista DEBE estar ordenada por ISBN.
 // Devuelve la posición del libro, o -1 si no existe.
-// "comparaciones" cuenta cuántas veces comparamos (lo usaremos en el Día 7).
 int BusquedaBinaria(List<Titulo> lista, string isbn, out int comparaciones)
 {
     int inicio = 0;
@@ -138,21 +161,20 @@ int BusquedaBinaria(List<Titulo> lista, string isbn, out int comparaciones)
 
         if (resultado == 0)
         {
-            return medio;          // lo encontramos
+            return medio;
         }
         else if (resultado < 0)
         {
-            fin = medio - 1;       // descartamos la mitad derecha
+            fin = medio - 1;
         }
         else
         {
-            inicio = medio + 1;    // descartamos la mitad izquierda
+            inicio = medio + 1;
         }
     }
-    return -1;                     // no existe
+    return -1;
 }
 
-// Busca por ISBN e informa si existe y cuántas copias quedan.
 void BuscarPorIsbn(List<Titulo> lista, string isbn)
 {
     int pos = BusquedaBinaria(lista, isbn, out int comparaciones);
