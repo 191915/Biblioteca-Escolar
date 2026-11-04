@@ -28,6 +28,7 @@ while (!salir)
     Console.WriteLine("3. Buscar por ISBN");
     Console.WriteLine("4. Registrar un préstamo");
     Console.WriteLine("5. Prueba de escritorio (3 préstamos)");
+    Console.WriteLine("6. Medir comparaciones (propia vs Array.BinarySearch)");
     Console.WriteLine("0. Salir");
     Console.Write("Elige una opción: ");
     string opcion = Console.ReadLine() ?? "";
@@ -59,6 +60,10 @@ while (!salir)
     {
         PruebaDeEscritorio();
     }
+    else if (opcion == "6")
+    {
+        MedirComparaciones();
+    }
     else if (opcion == "0")
     {
         salir = true;
@@ -89,6 +94,32 @@ void PruebaDeEscritorio()
     Console.WriteLine();
     Console.WriteLine("=== CATÁLOGO DESPUÉS DE LOS PRÉSTAMOS ===");
     MostrarCatalogo(catalogo);
+}
+
+// Compara tu búsqueda binaria con Array.BinarySearch usando 5 consultas.
+void MedirComparaciones()
+{
+    // Arreglo con los ISBN ya ordenados, para usar Array.BinarySearch.
+    string[] isbns = new string[porIsbn.Count];
+    for (int i = 0; i < porIsbn.Count; i++)
+    {
+        isbns[i] = porIsbn[i].Isbn;
+    }
+
+    string[] consultas = { "978-0001", "978-0003", "978-0005", "978-0008", "978-9999" };
+
+    Console.WriteLine();
+    Console.WriteLine("ISBN | Comparaciones (propia) | Comparaciones (Array.BinarySearch) | Resultado");
+    foreach (string c in consultas)
+    {
+        int posPropia = BusquedaBinaria(porIsbn, c, out int propia);
+
+        ContadorOrdinal contador = new ContadorOrdinal();
+        int posArray = Array.BinarySearch(isbns, c, contador);
+
+        string coincide = (posPropia >= 0) == (posArray >= 0) ? "coinciden" : "DIFERENTE";
+        Console.WriteLine(c + " | " + propia + " | " + contador.Cuenta + " | " + coincide);
+    }
 }
 
 void MostrarCatalogo(List<Titulo> lista)
@@ -251,5 +282,17 @@ class Titulo
         Ejemplares = ejemplares;
         Disponibles = ejemplares;
         Prestamos = prestamos;
+    }
+}
+
+// Comparador que cuenta cuántas comparaciones hace Array.BinarySearch.
+class ContadorOrdinal : IComparer<string>
+{
+    public int Cuenta = 0;
+
+    public int Compare(string? x, string? y)
+    {
+        Cuenta++;
+        return string.CompareOrdinal(x, y);
     }
 }
